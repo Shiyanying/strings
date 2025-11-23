@@ -10,11 +10,17 @@ RUN npm run build
 FROM node:18-alpine
 WORKDIR /app
 
-# Install wget for healthcheck
-RUN apk add --no-cache wget
+# Install build dependencies for native modules and wget for healthcheck
+RUN apk add --no-cache \
+    wget \
+    python3 \
+    make \
+    g++
 
 COPY server/package*.json ./
-RUN npm install --production
+RUN npm install --production && \
+    npm rebuild sqlite3 && \
+    apk del python3 make g++
 
 # Copy Backend Code
 COPY server/ ./
