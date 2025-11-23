@@ -14,27 +14,19 @@ WORKDIR /app
 RUN apk add --no-cache \
     wget \
     python3 \
+    py3-setuptools \
     make \
     g++
 
 # Copy Backend Dependencies and Install
 COPY server/package*.json ./
 
-# Remove any cached node_modules
-RUN rm -rf node_modules package-lock.json
-
-# Install dependencies fresh
-RUN npm install --production
-
-# Rebuild sqlite3 from source for Alpine Linux
-RUN npm rebuild sqlite3 --build-from-source
-
-# Verify sqlite3 binary exists and is correct architecture
-RUN ls -la node_modules/sqlite3/build/Release/ && \
-    file node_modules/sqlite3/build/Release/node_sqlite3.node
-
-# Clean up build dependencies (keep wget for healthcheck)
-RUN apk del python3 make g++
+# Install dependencies (sqlite3 will auto-compile during install)
+RUN npm install --production && \
+    npm rebuild sqlite3 --build-from-source && \
+    ls -la node_modules/sqlite3/build/Release/ && \
+    file node_modules/sqlite3/build/Release/node_sqlite3.node && \
+    apk del python3 py3-setuptools make g++
 
 # Copy Backend Code
 COPY server/ ./
