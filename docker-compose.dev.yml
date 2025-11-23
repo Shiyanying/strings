@@ -8,6 +8,7 @@ services:
       - "5173:5173"
     volumes:
       - ./client:/app
+      - /app/node_modules  # 排除 node_modules 挂载，使用容器内的版本
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     environment:
       - NODE_ENV=development
