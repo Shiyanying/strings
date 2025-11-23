@@ -126,6 +126,20 @@ app.get('/api/vocab', (req, res) => {
     });
 });
 
+// Delete vocabulary
+app.delete('/api/vocab/:id', (req, res) => {
+    const sql = `DELETE FROM vocabulary WHERE id = ?`;
+    db.run(sql, [req.params.id], function (err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: 'Vocabulary not found' });
+        }
+        res.json({ message: 'Vocabulary deleted successfully' });
+    });
+});
+
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'public')));

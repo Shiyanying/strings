@@ -3,83 +3,279 @@ import '../styles/global.css';
 
 const VocabularyModal = ({ onClose }) => {
     const [vocab, setVocab] = useState([]);
+    const [deletingId, setDeletingId] = useState(null);
+    const [toast, setToast] = useState(null);
 
     useEffect(() => {
+        fetchVocab();
+    }, []);
+
+    const fetchVocab = () => {
         fetch('/api/vocab')
             .then(res => res.json())
             .then(data => setVocab(data))
             .catch(err => console.error(err));
-    }, []);
+    };
+
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    const handleDelete = async (id) => {
+        if (!confirm('确定要删除这个生词吗？')) {
+            return;
+        }
+
+        setDeletingId(id);
+        try {
+            const res = await fetch(`/api/vocab/${id}`, {
+                method: 'DELETE',
+            });
+            
+            if (res.ok) {
+                // 从列表中移除已删除的项
+                setVocab(vocab.filter(item => item.id !== id));
+                showToast('✓ 生词已删除');
+            } else {
+                showToast('删除失败，请重试', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('删除出错', 'error');
+        } finally {
+            setDeletingId(null);
+        }
+    };
 
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h2>My Vocabulary</h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+                <div className="modal-header">
+                    <h2 className="modal-title">📖 我的生词本</h2>
+                    <button onClick={onClose} className="modal-close">×</button>
                 </div>
 
                 <div className="vocab-list">
-                    {vocab.map((item) => (
-                        <div key={item.id} className="vocab-item">
-                            <div className="vocab-header">
-                                <span className="vocab-original">{item.original}</span>
-                                <span className="vocab-translation">{item.translation}</span>
-                            </div>
-                            {item.context && (
-                                <div className="vocab-context">"{item.context}"</div>
-                            )}
-                            <div className="vocab-meta">
-                                From: {item.bookTitle} • {new Date(item.createdAt).toLocaleDateString()}
-                            </div>
+                    {vocab.length === 0 ? (
+                        <div className="vocab-empty">
+                            <p>还没有保存生词</p>
+                            <p className="vocab-empty-hint">在阅读时右键选择单词并翻译即可保存</p>
                         </div>
-                    ))}
-                    {vocab.length === 0 && <p>No words saved yet.</p>}
+                    ) : (
+                        vocab.map((item) => (
+                            <div key={item.id} className="vocab-item">
+                                <div className="vocab-content">
+                                    <div className="vocab-header">
+                                        <span className="vocab-original">{item.original}</span>
+                                        <span className="vocab-translation">{item.translation}</span>
+                                    </div>
+                                    {item.context && (
+                                        <div className="vocab-context">"{item.context.substring(0, 100)}{item.context.length > 100 ? '...' : ''}"</div>
+                                    )}
+                                    <div className="vocab-meta">
+                                        来自《{item.bookTitle}》 · {new Date(item.createdAt).toLocaleDateString('zh-CN')}
+                                    </div>
+                                </div>
+                                <button 
+                                    className="vocab-delete-btn"
+                                    onClick={() => handleDelete(item.id)}
+                                    disabled={deletingId === item.id}
+                                    title="删除"
+                                >
+                                    {deletingId === item.id ? '...' : '🗑️'}
+                                </button>
+                            </div>
+                        ))
+                    )}
                 </div>
+
+                {toast && (
+                    <div className={`toast toast-${toast.type}`}>
+                        {toast.message}
+                    </div>
+                )}
             </div>
 
             <style>{`
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 24px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+          margin: 0;
+          font-size: 20px;
+          font-weight: 600;
+          color: var(--ink-color);
+        }
+
+        .modal-close {
+          background: none;
+          border: none;
+          font-size: 24px;
+          cursor: pointer;
+          color: var(--text-secondary);
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: var(--radius-sm);
+          transition: background 0.2s;
+        }
+
+        .modal-close:hover {
+          background: var(--bg-secondary);
+        }
+
         .vocab-list {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 12px;
+          max-height: 60vh;
+          overflow-y: auto;
+        }
+
+        .vocab-empty {
+          text-align: center;
+          padding: 40px 20px;
+          color: var(--text-secondary);
+        }
+
+        .vocab-empty p {
+          margin: 0 0 8px 0;
+        }
+
+        .vocab-empty-hint {
+          font-size: 13px;
+          color: var(--text-secondary);
         }
 
         .vocab-item {
-          background: #f8f5f0;
+          background: var(--bg-primary);
           padding: 16px;
-          border-radius: 12px;
-          border-left: 4px solid var(--accent-color);
+          border-radius: var(--radius-md);
+          border: 1px solid var(--border-color);
+          transition: all 0.2s;
+          display: flex;
+          gap: 12px;
+          align-items: flex-start;
+        }
+
+        .vocab-item:hover {
+          border-color: var(--accent-color);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .vocab-content {
+          flex: 1;
+          min-width: 0;
         }
 
         .vocab-header {
           display: flex;
           justify-content: space-between;
-          align-items: center;
+          align-items: baseline;
           margin-bottom: 8px;
+          gap: 16px;
+        }
+
+        .vocab-delete-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 18px;
+          padding: 4px 8px;
+          border-radius: var(--radius-sm);
+          transition: all 0.2s;
+          flex-shrink: 0;
+          opacity: 0.6;
+        }
+
+        .vocab-delete-btn:hover:not(:disabled) {
+          opacity: 1;
+          background: rgba(239, 68, 68, 0.1);
+        }
+
+        .vocab-delete-btn:disabled {
+          cursor: not-allowed;
+          opacity: 0.3;
         }
 
         .vocab-original {
-          font-weight: bold;
-          font-size: 1.1rem;
-          color: #2c2c2c;
+          font-weight: 600;
+          font-size: 16px;
+          color: var(--ink-color);
+          flex-shrink: 0;
         }
 
         .vocab-translation {
           color: var(--accent-color);
-          font-weight: 600;
+          font-weight: 500;
+          font-size: 15px;
         }
 
         .vocab-context {
-          font-style: italic;
-          color: #666;
-          font-size: 0.9rem;
+          font-size: 13px;
+          color: var(--text-secondary);
+          line-height: 1.5;
           margin-bottom: 8px;
+          font-style: italic;
         }
 
         .vocab-meta {
-          font-size: 0.8rem;
-          color: #999;
+          font-size: 12px;
+          color: var(--text-secondary);
+        }
+
+        /* Toast Notification */
+        .toast {
+          position: fixed;
+          top: 24px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: white;
+          padding: 16px 24px;
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-xl);
+          border: 1px solid var(--border-color);
+          font-size: 15px;
+          font-weight: 500;
+          z-index: 10001;
+          animation: slideDown 0.3s ease, fadeOut 0.3s ease 2.7s;
+          min-width: 200px;
+          text-align: center;
+        }
+
+        .toast-success {
+          color: var(--success-color);
+          border-left: 4px solid var(--success-color);
+        }
+
+        .toast-error {
+          color: #ef4444;
+          border-left: 4px solid #ef4444;
+        }
+
+        @keyframes slideDown {
+          from {
+            transform: translate(-50%, -20px);
+            opacity: 0;
+          }
+          to {
+            transform: translate(-50%, 0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
         }
       `}</style>
         </div>
