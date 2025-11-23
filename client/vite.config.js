@@ -7,7 +7,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        // Docker 环境使用服务名 backend，本地开发使用 localhost
+        target: process.env.VITE_API_TARGET || 'http://localhost:3000',
         changeOrigin: true,
       }
     }

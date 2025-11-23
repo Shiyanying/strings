@@ -1,5 +1,5 @@
 # Build Frontend
-FROM node:18-alpine as build
+FROM node:20-alpine as build
 WORKDIR /app/client
 COPY client/package*.json ./
 RUN npm install
@@ -7,7 +7,7 @@ COPY client/ ./
 RUN npm run build
 
 # Setup Backend
-FROM node:18-alpine
+FROM node:20-alpine
 WORKDIR /app
 
 # Install build dependencies for native modules and wget for healthcheck
