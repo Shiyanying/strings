@@ -21,10 +21,8 @@ RUN apk add --no-cache \
 # Copy Backend Dependencies and Install
 COPY server/package*.json ./
 
-# Install dependencies (sqlite3 will auto-compile during install)
+# Install dependencies (better-sqlite3 will auto-compile during install)
 RUN npm install --production && \
-    npm rebuild sqlite3 --build-from-source && \
-    ls -la node_modules/sqlite3/build/Release/ && \
     apk del python3 py3-setuptools make g++
 
 # Copy Backend Code
