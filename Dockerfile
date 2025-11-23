@@ -25,7 +25,6 @@ COPY server/package*.json ./
 RUN npm install --production && \
     npm rebuild sqlite3 --build-from-source && \
     ls -la node_modules/sqlite3/build/Release/ && \
-    file node_modules/sqlite3/build/Release/node_sqlite3.node && \
     apk del python3 py3-setuptools make g++
 
 # Copy Backend Code
