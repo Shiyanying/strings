@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/global.css';
 
-const DeskView = ({ onOpenBook, onOpenVocab }) => {
+const DeskView = ({ onOpenBook, onOpenVocab, onLogout }) => {
     const [books, setBooks] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
     const [toast, setToast] = useState(null);
@@ -73,6 +73,11 @@ const DeskView = ({ onOpenBook, onOpenVocab }) => {
                             disabled={isUploading}
                         />
                     </label>
+                    {onLogout && (
+                        <button className="btn btn-logout" onClick={onLogout} title="退出登录">
+                            🚪 退出
+                        </button>
+                    )}
                 </div>
             </div>
 

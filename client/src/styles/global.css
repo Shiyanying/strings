@@ -93,6 +93,18 @@ body {
   border-color: var(--primary-600);
 }
 
+.btn-logout {
+  background: white;
+  color: #64748b;
+  border-color: var(--border-color);
+}
+
+.btn-logout:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
