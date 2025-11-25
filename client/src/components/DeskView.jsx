@@ -5,6 +5,7 @@ const DeskView = ({ onOpenBook, onOpenVocab, onLogout }) => {
     const [books, setBooks] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
     const [toast, setToast] = useState(null);
+    const [deleteConfirm, setDeleteConfirm] = useState(null);
 
     useEffect(() => {
         fetchBooks();
@@ -50,6 +51,34 @@ const DeskView = ({ onOpenBook, onOpenVocab, onLogout }) => {
         } finally {
             setIsUploading(false);
         }
+    };
+
+    const handleDeleteBook = async (bookId) => {
+        try {
+            const res = await fetch(`/api/books/${bookId}`, {
+                method: 'DELETE',
+            });
+            if (res.ok) {
+                showToast('✓ 书籍已删除');
+                fetchBooks();
+            } else {
+                showToast('删除失败，请重试', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('删除出错，请检查网络', 'error');
+        } finally {
+            setDeleteConfirm(null);
+        }
+    };
+
+    const confirmDelete = (book, e) => {
+        e.stopPropagation();
+        setDeleteConfirm(book);
+    };
+
+    const cancelDelete = () => {
+        setDeleteConfirm(null);
     };
 
     return (
@@ -110,6 +139,15 @@ const DeskView = ({ onOpenBook, onOpenVocab, onLogout }) => {
                                     <h3 className="book-title">{book.title}</h3>
                                     <p className="book-meta">点击阅读</p>
                                 </div>
+                                <button
+                                    className="book-delete-btn"
+                                    onClick={(e) => confirmDelete(book, e)}
+                                    title="删除书籍"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </button>
                             </div>
                         ))}
                     </div>
@@ -119,6 +157,37 @@ const DeskView = ({ onOpenBook, onOpenVocab, onLogout }) => {
             {toast && (
                 <div className={`toast toast-${toast.type}`}>
                     {toast.message}
+                </div>
+            )}
+
+            {deleteConfirm && (
+                <div className="modal-overlay" onClick={cancelDelete}>
+                    <div className="delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="delete-confirm-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </div>
+                        <h3 className="delete-confirm-title">确认删除书籍？</h3>
+                        <p className="delete-confirm-text">
+                            您确定要删除 <strong>{deleteConfirm.title}</strong> 吗？
+                        </p>
+                        <p className="delete-confirm-warning">
+                            ⚠️ 此操作将同时删除该书籍的所有生词记录，且无法恢复。
+                        </p>
+                        <div className="delete-confirm-actions">
+                            <button className="btn" onClick={cancelDelete}>
+                                取消
+                            </button>
+                            <button 
+                                className="btn btn-danger" 
+                                onClick={() => handleDeleteBook(deleteConfirm.id)}
+                            >
+                                确认删除
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -188,12 +257,17 @@ const DeskView = ({ onOpenBook, onOpenVocab, onLogout }) => {
           display: flex;
           align-items: flex-start;
           gap: 16px;
+          position: relative;
         }
 
         .book-card:hover {
           box-shadow: var(--shadow-lg);
           transform: translateY(-2px);
           border-color: var(--accent-color);
+        }
+
+        .book-card:hover .book-delete-btn {
+          opacity: 1;
         }
 
         .book-icon {
@@ -220,6 +294,35 @@ const DeskView = ({ onOpenBook, onOpenVocab, onLogout }) => {
           margin: 0;
           font-size: 13px;
           color: var(--text-secondary);
+        }
+
+        .book-delete-btn {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          width: 36px;
+          height: 36px;
+          border: none;
+          background: white;
+          border-radius: 50%;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--text-secondary);
+          opacity: 0;
+          transition: all 0.2s ease;
+          box-shadow: var(--shadow-md);
+        }
+
+        .book-delete-btn:hover {
+          background: #fef2f2;
+          color: #dc2626;
+          transform: scale(1.1);
+        }
+
+        .book-delete-btn:active {
+          transform: scale(0.95);
         }
 
         .empty-state {
@@ -290,6 +393,82 @@ const DeskView = ({ onOpenBook, onOpenVocab, onLogout }) => {
         @keyframes fadeOut {
           from { opacity: 1; }
           to { opacity: 0; }
+        }
+
+        /* Delete Confirmation Modal */
+        .delete-confirm-modal {
+          background: white;
+          border-radius: var(--radius-lg);
+          padding: 32px;
+          max-width: 480px;
+          width: 90%;
+          box-shadow: var(--shadow-xl);
+          animation: slideUp 0.3s ease;
+        }
+
+        .delete-confirm-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 80px;
+          height: 80px;
+          background: #fef2f2;
+          border-radius: 50%;
+          color: #dc2626;
+          margin: 0 auto 24px;
+        }
+
+        .delete-confirm-title {
+          margin: 0 0 16px 0;
+          font-size: 24px;
+          font-weight: 600;
+          color: var(--ink-color);
+          text-align: center;
+        }
+
+        .delete-confirm-text {
+          margin: 0 0 16px 0;
+          font-size: 16px;
+          color: var(--text-secondary);
+          text-align: center;
+          line-height: 1.5;
+        }
+
+        .delete-confirm-text strong {
+          color: var(--ink-color);
+          font-weight: 600;
+        }
+
+        .delete-confirm-warning {
+          margin: 0 0 24px 0;
+          padding: 12px 16px;
+          background: #fef9e7;
+          border: 1px solid #fde68a;
+          border-radius: var(--radius-sm);
+          font-size: 14px;
+          color: #92400e;
+          text-align: center;
+        }
+
+        .delete-confirm-actions {
+          display: flex;
+          gap: 12px;
+          justify-content: center;
+        }
+
+        .delete-confirm-actions .btn {
+          min-width: 120px;
+        }
+
+        @keyframes slideUp {
+          from {
+            transform: translateY(20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
         }
 
         @media (max-width: 768px) {

@@ -140,6 +140,52 @@ app.delete('/api/vocab/:id', (req, res) => {
     });
 });
 
+// Delete book
+app.delete('/api/books/:id', (req, res) => {
+    const bookId = req.params.id;
+    
+    // First, get the book filename
+    const getBookSql = `SELECT filename FROM books WHERE id = ?`;
+    db.get(getBookSql, [bookId], (err, book) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (!book) {
+            return res.status(404).json({ error: 'Book not found' });
+        }
+        
+        // Delete associated vocabulary
+        const deleteVocabSql = `DELETE FROM vocabulary WHERE bookId = ?`;
+        db.run(deleteVocabSql, [bookId], (err) => {
+            if (err) {
+                console.error('Error deleting vocabulary:', err);
+                // Continue even if vocabulary deletion fails
+            }
+            
+            // Delete book from database
+            const deleteBookSql = `DELETE FROM books WHERE id = ?`;
+            db.run(deleteBookSql, [bookId], function (err) {
+                if (err) {
+                    return res.status(500).json({ error: err.message });
+                }
+                
+                // Delete the file from uploads directory
+                const filePath = path.join(uploadsDir, book.filename);
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        console.error('Error deleting file:', err);
+                        // File might not exist, but book is deleted from DB, so continue
+                    }
+                    res.json({ 
+                        message: 'Book deleted successfully',
+                        deletedFile: book.filename
+                    });
+                });
+            });
+        });
+    });
+});
+
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'public')));
