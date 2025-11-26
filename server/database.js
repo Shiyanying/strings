@@ -38,7 +38,8 @@ const compatDb = {
             const stmt = db.prepare(sql);
             const args = Array.isArray(params) ? params : (params !== undefined ? [params] : []);
             const info = stmt.run(...args);
-            if (callback) callback.call({ lastID: info.lastID, changes: info.changes }, null);
+            // better-sqlite3 uses lastInsertRowid instead of lastID
+            if (callback) callback.call({ lastID: info.lastInsertRowid, changes: info.changes }, null);
         } catch (err) {
             if (callback) callback(err);
         }

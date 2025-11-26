@@ -217,8 +217,8 @@ const LoginView = ({ onLogin }) => {
                 .login-input:focus {
                     outline: none;
                     border-color: var(--primary-500);
-                    background: white;
-                    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+                    background: var(--paper-color);
+                    box-shadow: 0 0 0 4px var(--accent-light);
                 }
 
                 .login-error {
@@ -227,10 +227,10 @@ const LoginView = ({ onLogin }) => {
                     gap: 8px;
                     margin-top: 12px;
                     padding: 10px 12px;
-                    background: #fef2f2;
-                    border: 1px solid #fecaca;
+                    background: var(--danger-light);
+                    border: 1px solid var(--danger-color);
                     border-radius: var(--radius-sm);
-                    color: #dc2626;
+                    color: var(--danger-color);
                     font-size: 14px;
                     animation: slideDown 0.3s ease;
                 }

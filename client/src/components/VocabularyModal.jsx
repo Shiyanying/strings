@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/global.css';
 
-const VocabularyModal = ({ onClose }) => {
+const VocabularyModal = ({ onClose, onJumpToBook, vocabVersion = 0 }) => {
     const [vocab, setVocab] = useState([]);
     const [deletingId, setDeletingId] = useState(null);
     const [toast, setToast] = useState(null);
@@ -9,6 +9,14 @@ const VocabularyModal = ({ onClose }) => {
     useEffect(() => {
         fetchVocab();
     }, []);
+
+    // 监听生词版本变化，自动刷新
+    useEffect(() => {
+        if (vocabVersion > 0) {
+            console.log('生词本检测到版本变化，刷新列表, 版本:', vocabVersion);
+            fetchVocab();
+        }
+    }, [vocabVersion]);
 
     const fetchVocab = () => {
         fetch('/api/vocab')
@@ -52,7 +60,10 @@ const VocabularyModal = ({ onClose }) => {
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2 className="modal-title">📖 我的生词本</h2>
+                    <div className="modal-header-left">
+                        <h2 className="modal-title">📖 我的生词本</h2>
+                        <span className="vocab-hint">点击跳转异常请刷新浏览器</span>
+                    </div>
                     <button onClick={onClose} className="modal-close">×</button>
                 </div>
 
@@ -65,7 +76,11 @@ const VocabularyModal = ({ onClose }) => {
                     ) : (
                         vocab.map((item) => (
                             <div key={item.id} className="vocab-item">
-                                <div className="vocab-content">
+                                <div 
+                                    className="vocab-content" 
+                                    onClick={() => onJumpToBook && onJumpToBook(item.bookId, item.original)}
+                                    style={{ cursor: onJumpToBook ? 'pointer' : 'default' }}
+                                >
                                     <div className="vocab-header">
                                         <span className="vocab-original">{item.original}</span>
                                         <span className="vocab-translation">{item.translation}</span>
@@ -74,7 +89,7 @@ const VocabularyModal = ({ onClose }) => {
                                         <div className="vocab-context">"{item.context.substring(0, 100)}{item.context.length > 100 ? '...' : ''}"</div>
                                     )}
                                     <div className="vocab-meta">
-                                        来自《{item.bookTitle}》 · {new Date(item.createdAt).toLocaleDateString('zh-CN')}
+                                        <span className="vocab-book-link">📚 来自《{item.bookTitle}》</span> · {new Date(item.createdAt).toLocaleDateString('zh-CN')}
                                     </div>
                                 </div>
                                 <button 
@@ -107,11 +122,23 @@ const VocabularyModal = ({ onClose }) => {
           border-bottom: 1px solid var(--border-color);
         }
 
+        .modal-header-left {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
         .modal-title {
           margin: 0;
           font-size: 20px;
           font-weight: 600;
           color: var(--ink-color);
+        }
+
+        .vocab-hint {
+          font-size: 11px;
+          color: var(--text-secondary);
+          opacity: 0.7;
         }
 
         .modal-close {
@@ -170,6 +197,11 @@ const VocabularyModal = ({ onClose }) => {
         .vocab-item:hover {
           border-color: var(--accent-color);
           box-shadow: var(--shadow-sm);
+        }
+
+        .vocab-content:hover .vocab-book-link {
+          color: var(--accent-color);
+          text-decoration: underline;
         }
 
         .vocab-content {
@@ -239,7 +271,7 @@ const VocabularyModal = ({ onClose }) => {
           top: 24px;
           left: 50%;
           transform: translateX(-50%);
-          background: white;
+          background: var(--popup-bg);
           padding: 16px 24px;
           border-radius: var(--radius-md);
           box-shadow: var(--shadow-xl);
@@ -258,8 +290,8 @@ const VocabularyModal = ({ onClose }) => {
         }
 
         .toast-error {
-          color: #ef4444;
-          border-left: 4px solid #ef4444;
+          color: var(--danger-color);
+          border-left: 4px solid var(--danger-color);
         }
 
         @keyframes slideDown {

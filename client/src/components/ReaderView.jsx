@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/global.css';
 
-const ReaderView = ({ book, onClose }) => {
+const ReaderView = ({ book, onClose, highlightWord = null, vocabVersion = 0, theme, onToggleTheme }) => {
     const [content, setContent] = useState('');
     const [selection, setSelection] = useState(null); // { text, rect, context }
     const [translation, setTranslation] = useState('');
@@ -10,6 +10,9 @@ const ReaderView = ({ book, onClose }) => {
     const [vocabularyList, setVocabularyList] = useState([]); // 已保存的生词列表
     const [hoveredWord, setHoveredWord] = useState(null); // 当前悬停的单词
     const [selectedVocab, setSelectedVocab] = useState(null); // 点击选中的生词详情
+    const [jumpHighlight, setJumpHighlight] = useState(null); // 跳转高亮的单词
+    const [isEditingContent, setIsEditingContent] = useState(false); // 是否在编辑内容
+    const [editedContent, setEditedContent] = useState(''); // 编辑中的内容
     const contentRef = useRef(null);
     const isDraggingRef = useRef(false);
     const longPressTimerRef = useRef(null);
@@ -24,6 +27,65 @@ const ReaderView = ({ book, onClose }) => {
         // 获取当前书籍的生词列表
         fetchVocabulary();
     }, [book]);
+
+    // 监听生词版本变化，自动刷新生词列表
+    useEffect(() => {
+        if (vocabVersion > 0) {
+            console.log('检测到生词版本变化，刷新生词列表, 版本:', vocabVersion);
+            fetchVocabulary();
+        }
+    }, [vocabVersion]);
+
+    // 当内容和生词列表都加载完成后，滚动到指定单词
+    useEffect(() => {
+        if (content && vocabularyList.length > 0 && highlightWord) {
+            // 延迟确保 DOM 已更新高亮
+            const timer = setTimeout(() => {
+                scrollToWord(highlightWord);
+            }, 300);
+            return () => clearTimeout(timer);
+        } else if (content && highlightWord && vocabularyList.length === 0) {
+            // 如果生词列表为空但有跳转词，延迟重试
+            console.log('生词列表为空，延迟重试');
+            const retryTimer = setTimeout(() => {
+                if (vocabularyList.length > 0) {
+                    scrollToWord(highlightWord);
+                }
+            }, 800);
+            return () => clearTimeout(retryTimer);
+        }
+    }, [content, vocabularyList, highlightWord]);
+
+    const scrollToWord = (word) => {
+        if (!word) return;
+        
+        console.log('尝试滚动到单词:', word);
+        console.log('当前生词列表长度:', vocabularyList.length);
+        
+        // 查找所有包含该单词的 mark 元素
+        const marks = contentRef.current?.querySelectorAll('.vocab-highlight');
+        console.log('找到的高亮元素数量:', marks?.length || 0);
+        
+        if (!marks || marks.length === 0) {
+            console.warn('没有找到高亮元素，可能生词列表还未加载');
+            return;
+        }
+
+        // 找到第一个匹配的单词
+        for (let mark of marks) {
+            if (mark.textContent.toLowerCase() === word.toLowerCase()) {
+                console.log('找到匹配的单词，开始滚动');
+                // 滚动到该元素
+                mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // 添加临时高亮动画
+                setJumpHighlight(word);
+                setTimeout(() => setJumpHighlight(null), 2000);
+                
+                break;
+            }
+        }
+    };
 
     const fetchVocabulary = () => {
         fetch('/api/vocab')
@@ -40,21 +102,48 @@ const ReaderView = ({ book, onClose }) => {
     const highlightVocabulary = (text) => {
         if (!text || vocabularyList.length === 0) return text;
 
-        let highlightedText = text;
+        // 去重：同一个单词可能被多次添加到生词本（比如导入备份时）
+        const uniqueVocab = [];
+        const seenWords = new Set();
+        
+        vocabularyList.forEach(vocab => {
+            const lowerWord = vocab.original.toLowerCase();
+            if (!seenWords.has(lowerWord)) {
+                seenWords.add(lowerWord);
+                uniqueVocab.push(vocab);
+            }
+        });
         
         // 按单词长度降序排序，优先匹配长单词，避免短单词被误匹配
-        const sortedVocab = [...vocabularyList].sort((a, b) => 
+        const sortedVocab = uniqueVocab.sort((a, b) => 
             b.original.length - a.original.length
         );
 
-        sortedVocab.forEach((vocab) => {
+        // 使用临时占位符避免重复替换
+        let highlightedText = text;
+        const replacements = new Map();
+        
+        sortedVocab.forEach((vocab, index) => {
             const word = vocab.original;
-            // 使用正则表达式进行全局匹配（不区分大小写）
-            const regex = new RegExp(`(${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-            highlightedText = highlightedText.replace(
-                regex,
-                `<mark class="vocab-highlight" data-vocab-id="${vocab.id}" data-translation="${vocab.translation.replace(/"/g, '&quot;')}">$1</mark>`
-            );
+            const isJumpTarget = jumpHighlight && word.toLowerCase() === jumpHighlight.toLowerCase();
+            const jumpClass = isJumpTarget ? ' vocab-jump-highlight' : '';
+            
+            // 转义特殊字符
+            const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // 使用词边界匹配完整单词
+            const regex = new RegExp(`\\b(${escapedWord})\\b`, 'gi');
+            
+            // 第一轮：替换为带原文的占位符
+            highlightedText = highlightedText.replace(regex, (match) => {
+                const placeholder = `__VOCAB_${index}_${match}__`;
+                replacements.set(placeholder, `<mark class="vocab-highlight${jumpClass}" data-vocab-id="${vocab.id}" data-translation="${vocab.translation.replace(/"/g, '&quot;')}">${match}</mark>`);
+                return placeholder;
+            });
+        });
+        
+        // 第二轮：恢复占位符为实际的 mark 标签
+        replacements.forEach((markTag, placeholder) => {
+            highlightedText = highlightedText.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), markTag);
         });
 
         return highlightedText;
@@ -342,6 +431,39 @@ const ReaderView = ({ book, onClose }) => {
         }
     };
 
+    const startEditContent = () => {
+        setEditedContent(content);
+        setIsEditingContent(true);
+    };
+
+    const cancelEditContent = () => {
+        setIsEditingContent(false);
+        setEditedContent('');
+    };
+
+    const saveEditContent = async () => {
+        setIsSaving(true);
+        try {
+            const res = await fetch(`/api/books/${book.id}/content`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: editedContent })
+            });
+            if (res.ok) {
+                setContent(editedContent);
+                setIsEditingContent(false);
+                showToast('✓ 内容已保存');
+            } else {
+                showToast('保存失败，请重试', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('保存出错，请检查网络', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
         <div className="reader-container">
             <div className="reader-header">
@@ -349,7 +471,18 @@ const ReaderView = ({ book, onClose }) => {
                     ← 返回书架
                 </button>
                 <h2 className="reader-title">{book.title}</h2>
-                <div className="header-spacer"></div>
+                <div className="reader-header-actions">
+                    <button 
+                        className="btn theme-toggle-btn" 
+                        onClick={onToggleTheme}
+                        title={theme === 'light' ? '切换到黑暗模式' : '切换到明亮模式'}
+                    >
+                        {theme === 'light' ? '🌙' : '☀️'}
+                    </button>
+                    <button className="btn" onClick={startEditContent} disabled={isEditingContent}>
+                        ✏️ 编辑内容
+                    </button>
+                </div>
             </div>
 
             <div className="reader-content-wrapper">
@@ -371,6 +504,9 @@ const ReaderView = ({ book, onClose }) => {
                         onTouchMove={handleTouchMove}
                         onTouchEnd={handleTouchEnd}
                     />
+                    <div className="reader-copyright">
+                        © 2024 Shiyanying · 个人版权所有
+                    </div>
                 </div>
             </div>
 
@@ -457,6 +593,35 @@ const ReaderView = ({ book, onClose }) => {
                 </div>
             )}
 
+            {isEditingContent && (
+                <div className="modal-overlay" onClick={cancelEditContent}>
+                    <div className="edit-content-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="edit-content-header">
+                            <h3 className="edit-content-title">✏️ 编辑外刊内容</h3>
+                            <button className="modal-close" onClick={cancelEditContent}>×</button>
+                        </div>
+                        <textarea
+                            className="edit-content-textarea"
+                            value={editedContent}
+                            onChange={(e) => setEditedContent(e.target.value)}
+                            placeholder="在此编辑外刊内容..."
+                        />
+                        <div className="edit-content-actions">
+                            <button className="btn" onClick={cancelEditContent}>
+                                取消
+                            </button>
+                            <button 
+                                className="btn btn-primary" 
+                                onClick={saveEditContent}
+                                disabled={isSaving}
+                            >
+                                {isSaving ? '保存中...' : '💾 保存'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style>{`
         .reader-container {
           width: 100vw;
@@ -468,7 +633,7 @@ const ReaderView = ({ book, onClose }) => {
         }
 
         .reader-header {
-          background: white;
+          background: var(--paper-color);
           border-bottom: 1px solid var(--border-color);
           padding: 16px 32px;
           display: flex;
@@ -477,17 +642,22 @@ const ReaderView = ({ book, onClose }) => {
           box-shadow: var(--shadow-sm);
         }
 
+        .reader-header-actions {
+          display: flex;
+          gap: 12px;
+        }
+
+        .theme-toggle-btn {
+          font-size: 18px;
+          padding: 10px 14px;
+        }
+
         .reader-title {
           margin: 0;
           font-size: 18px;
           font-weight: 600;
           color: var(--ink-color);
           flex: 1;
-          text-align: center;
-        }
-
-        .header-spacer {
-          width: 120px; /* Match back button width for centering */
         }
 
         .back-btn {
@@ -503,7 +673,7 @@ const ReaderView = ({ book, onClose }) => {
         .reader-content {
           max-width: 800px;
           margin: 0 auto;
-          background: white;
+          background: var(--paper-color);
           border-radius: var(--radius-lg);
           padding: 48px;
           box-shadow: var(--shadow-md);
@@ -526,21 +696,30 @@ const ReaderView = ({ book, onClose }) => {
         }
 
         .text-content::selection {
-          background: rgba(14, 165, 233, 0.3);
+          background: var(--vocab-highlight-border);
           color: var(--ink-color);
         }
 
         .text-content::-moz-selection {
-          background: rgba(14, 165, 233, 0.3);
+          background: var(--vocab-highlight-border);
           color: var(--ink-color);
+        }
+
+        .reader-copyright {
+          text-align: center;
+          padding: 48px 0 24px 0;
+          font-size: 12px;
+          color: var(--text-secondary);
+          margin-top: 40px;
+          border-top: 1px solid var(--border-color);
         }
 
         /* 生词高亮 */
         .vocab-highlight {
-          background: linear-gradient(180deg, transparent 60%, rgba(14, 165, 233, 0.2) 60%);
+          background: var(--vocab-highlight-bg);
           cursor: pointer;
-          padding: 2px 1px;
-          border-radius: 2px;
+          padding: 2px 4px;
+          border-radius: 3px;
           transition: all 0.2s;
           color: var(--ink-color);
           font-weight: 500;
@@ -552,7 +731,24 @@ const ReaderView = ({ book, onClose }) => {
         }
 
         .vocab-highlight:hover {
-          background: rgba(14, 165, 233, 0.25);
+          background: var(--vocab-highlight-border);
+        }
+
+        /* 跳转高亮脉冲动画 */
+        .vocab-jump-highlight {
+          animation: jumpPulse 1s ease-in-out 2;
+          background: var(--jump-highlight-bg) !important;
+        }
+
+        @keyframes jumpPulse {
+          0%, 100% {
+            background: var(--jump-highlight-bg);
+            transform: scale(1);
+          }
+          50% {
+            background: var(--warning-color);
+            transform: scale(1.05);
+          }
         }
 
         /* PC端：生词高亮后添加小标签 */
@@ -563,8 +759,8 @@ const ReaderView = ({ book, onClose }) => {
             bottom: 100%;
             left: 50%;
             transform: translateX(-50%) translateY(-4px);
-            background: var(--ink-color);
-            color: white;
+            background: var(--tooltip-bg);
+            color: var(--tooltip-text);
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 12px;
@@ -583,7 +779,7 @@ const ReaderView = ({ book, onClose }) => {
             left: 50%;
             transform: translateX(-50%) translateY(-4px);
             border: 4px solid transparent;
-            border-top-color: var(--ink-color);
+            border-top-color: var(--tooltip-bg);
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s, transform 0.2s;
@@ -604,8 +800,8 @@ const ReaderView = ({ book, onClose }) => {
         /* 生词悬停 Tooltip */
         .vocab-tooltip {
           position: absolute;
-          background: var(--ink-color);
-          color: white;
+          background: var(--tooltip-bg);
+          color: var(--tooltip-text);
           padding: 6px 12px;
           border-radius: 6px;
           font-size: 13px;
@@ -625,7 +821,7 @@ const ReaderView = ({ book, onClose }) => {
           left: 50%;
           transform: translateX(-50%);
           border: 6px solid transparent;
-          border-top-color: var(--ink-color);
+          border-top-color: var(--tooltip-bg);
         }
 
         @keyframes fadeIn {
@@ -636,7 +832,7 @@ const ReaderView = ({ book, onClose }) => {
         /* Selection Tooltip */
         .selection-tooltip {
           position: absolute;
-          background: white;
+          background: var(--popup-bg);
           padding: 20px;
           border-radius: var(--radius-md);
           box-shadow: var(--shadow-xl);
@@ -690,12 +886,14 @@ const ReaderView = ({ book, onClose }) => {
           font-family: var(--font-sans);
           font-size: 14px;
           box-sizing: border-box;
+          background: var(--paper-color);
+          color: var(--ink-color);
         }
 
         .tooltip-input:focus {
           outline: none;
           border-color: var(--accent-color);
-          box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+          box-shadow: 0 0 0 3px var(--accent-light);
         }
 
         .save-btn {
@@ -713,7 +911,7 @@ const ReaderView = ({ book, onClose }) => {
           top: 24px;
           left: 50%;
           transform: translateX(-50%);
-          background: white;
+          background: var(--popup-bg);
           padding: 16px 24px;
           border-radius: var(--radius-md);
           box-shadow: var(--shadow-xl);
@@ -732,8 +930,8 @@ const ReaderView = ({ book, onClose }) => {
         }
 
         .toast-error {
-          color: #ef4444;
-          border-left: 4px solid #ef4444;
+          color: var(--danger-color);
+          border-left: 4px solid var(--danger-color);
         }
 
         @keyframes slideDown {
@@ -763,7 +961,7 @@ const ReaderView = ({ book, onClose }) => {
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
+          background: var(--overlay-bg);
           -webkit-backdrop-filter: blur(4px);
           backdrop-filter: blur(4px);
           display: flex;
@@ -780,10 +978,11 @@ const ReaderView = ({ book, onClose }) => {
         }
 
         .vocab-detail-card {
-          background: white;
+          background: var(--popup-bg);
           border-radius: var(--radius-lg);
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          box-shadow: var(--shadow-xl);
           max-width: 500px;
+          border: 1px solid var(--border-color);
           width: 100%;
           max-height: 80vh;
           overflow: hidden;
@@ -909,6 +1108,95 @@ const ReaderView = ({ book, onClose }) => {
           gap: 6px;
         }
 
+        /* Edit Content Modal */
+        .edit-content-modal {
+          background: var(--popup-bg);
+          border-radius: var(--radius-lg);
+          width: 90%;
+          max-width: 900px;
+          max-height: 85vh;
+          display: flex;
+          flex-direction: column;
+          box-shadow: var(--shadow-xl);
+          animation: slideUp 0.3s ease;
+          border: 1px solid var(--border-color);
+        }
+
+        @keyframes slideUp {
+          from {
+            transform: translateY(20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+
+        .edit-content-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 24px;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        .edit-content-title {
+          margin: 0;
+          font-size: 20px;
+          font-weight: 600;
+          color: var(--ink-color);
+        }
+
+        .modal-close {
+          background: none;
+          border: none;
+          font-size: 28px;
+          cursor: pointer;
+          color: var(--text-secondary);
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: var(--radius-sm);
+          transition: background 0.2s;
+        }
+
+        .modal-close:hover {
+          background: var(--bg-secondary);
+        }
+
+        .edit-content-textarea {
+          flex: 1;
+          padding: 24px;
+          border: none;
+          font-family: var(--font-serif);
+          font-size: 16px;
+          line-height: 1.8;
+          resize: none;
+          outline: none;
+          overflow-y: auto;
+          background: var(--paper-color);
+          color: var(--ink-color);
+        }
+
+        .edit-content-textarea::placeholder {
+          color: var(--text-secondary);
+        }
+
+        .edit-content-actions {
+          display: flex;
+          gap: 12px;
+          justify-content: flex-end;
+          padding: 20px 24px;
+          border-top: 1px solid var(--border-color);
+        }
+
+        .edit-content-actions .btn {
+          min-width: 100px;
+        }
+
         @media (max-width: 768px) {
           .reader-header {
             padding: 12px 16px;
@@ -924,8 +1212,9 @@ const ReaderView = ({ book, onClose }) => {
             padding: 8px 12px;
           }
 
-          .header-spacer {
-            width: 80px;
+          .reader-header .btn {
+            font-size: 13px;
+            padding: 6px 10px;
           }
 
           .reader-content-wrapper {
@@ -948,17 +1237,17 @@ const ReaderView = ({ book, onClose }) => {
           }
 
           .text-content::selection {
-            background: rgba(14, 165, 233, 0.4);
+            background: var(--vocab-highlight-border);
           }
 
           .text-content::-moz-selection {
-            background: rgba(14, 165, 233, 0.4);
+            background: var(--vocab-highlight-border);
           }
 
           /* 移动端生词高亮优化 */
           .vocab-highlight {
             padding: 2px 1px;
-            -webkit-tap-highlight-color: rgba(14, 165, 233, 0.3);
+            -webkit-tap-highlight-color: var(--vocab-highlight-border);
             touch-action: manipulation;
             cursor: pointer;
             pointer-events: auto;
@@ -972,7 +1261,7 @@ const ReaderView = ({ book, onClose }) => {
           }
 
           .vocab-highlight:active {
-            background: rgba(14, 165, 233, 0.5) !important;
+            background: var(--vocab-highlight-border) !important;
             transform: scale(1.05);
           }
 

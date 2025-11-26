@@ -26,7 +26,8 @@ services:
       - ./server:/app
       - ./data:/app/data
       - /app/node_modules  # 排除 node_modules 挂载，使用容器内的版本
-    command: sh -c "apk add --no-cache python3 py3-setuptools make g++ && npm install && npm run dev"
+    command: sh -c "npm install --prefer-offline --no-audit && npm run dev"
     environment:
       - NODE_ENV=development
       - PORT=3000
+      - npm_config_build_from_source=false
