@@ -795,13 +795,14 @@ const DeskView = ({ onOpenBook, onOpenVocab, onLogout, theme, onToggleTheme }) =
 
         /* Edit Title Modal */
         .edit-title-modal {
-          background: white;
+          background: var(--popup-bg);
           border-radius: var(--radius-lg);
           padding: 32px;
           max-width: 480px;
           width: 90%;
           box-shadow: var(--shadow-xl);
           animation: slideUp 0.3s ease;
+          border: 1px solid var(--border-color);
         }
 
         .edit-title-icon {
@@ -810,9 +811,9 @@ const DeskView = ({ onOpenBook, onOpenVocab, onLogout, theme, onToggleTheme }) =
           justify-content: center;
           width: 80px;
           height: 80px;
-          background: #eff6ff;
+          background: var(--accent-light);
           border-radius: 50%;
-          color: #0ea5e9;
+          color: var(--accent-color);
           margin: 0 auto 24px;
         }
 
@@ -846,12 +847,18 @@ const DeskView = ({ onOpenBook, onOpenVocab, onLogout, theme, onToggleTheme }) =
           margin-bottom: 24px;
           box-sizing: border-box;
           transition: border-color 0.2s;
+          background: var(--paper-color);
+          color: var(--ink-color);
         }
 
         .edit-title-input:focus {
           outline: none;
           border-color: var(--accent-color);
-          box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+          box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .edit-title-input::placeholder {
+          color: var(--text-secondary);
         }
 
         .edit-title-actions {

@@ -13,10 +13,23 @@ app.use(cors());
 app.use(express.json());
 
 // Static files (uploaded books)
-const uploadsDir = path.join(__dirname, '../data/uploads');
+// Docker 环境: ./data, 本地环境: ../data
+const dataDir = fs.existsSync(path.join(__dirname, 'data')) 
+    ? path.join(__dirname, 'data') 
+    : path.join(__dirname, '../data');
+
+const uploadsDir = path.join(dataDir, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
+
+// 登录背景图片目录
+const loginBgDir = path.join(dataDir, 'login-bg');
+if (!fs.existsSync(loginBgDir)) {
+    fs.mkdirSync(loginBgDir, { recursive: true });
+}
+console.log('登录背景目录:', loginBgDir);
+app.use('/api/login-bg', express.static(loginBgDir));
 
 // Multer setup for file uploads
 const storage = multer.diskStorage({

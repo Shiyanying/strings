@@ -1,10 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../styles/global.css';
+import ParticleBackground from './ParticleBackground';
+
+// ============================================
+// 自定义背景图片配置
+// 将图片放到 data 文件夹，然后修改下面的路径
+// 例如: '/api/login-bg/my-image.png'
+// 设为 null 则使用默认彩色粒子效果
+// ============================================
+const CUSTOM_BG_IMAGE = null;
+// const CUSTOM_BG_IMAGE = '/api/login-bg/background.png';
 
 const LoginView = ({ onLogin }) => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isShaking, setIsShaking] = useState(false);
+    const [bgImage, setBgImage] = useState(null);
+
+    // 加载背景图片
+    useEffect(() => {
+        if (CUSTOM_BG_IMAGE) {
+            // 检查图片是否存在
+            const img = new Image();
+            img.onload = () => setBgImage(CUSTOM_BG_IMAGE);
+            img.onerror = () => setBgImage(null);
+            img.src = CUSTOM_BG_IMAGE;
+        }
+    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -29,6 +51,7 @@ const LoginView = ({ onLogin }) => {
     return (
         <div className="login-container">
             <div className="login-background">
+                <ParticleBackground imageUrl={bgImage} />
                 <div className="login-card-wrapper">
                     <div className={`login-card ${isShaking ? 'shake' : ''}`}>
                         <div className="login-header">
@@ -39,7 +62,7 @@ const LoginView = ({ onLogin }) => {
                                     <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                             </div>
-                            <h1 className="login-title">沉浸式英语阅读器</h1>
+                            <h1 className="login-title">小应英语阅读器</h1>
                             <p className="login-subtitle">请输入访问密码</p>
                         </div>
 
@@ -100,28 +123,12 @@ const LoginView = ({ onLogin }) => {
                 .login-background {
                     width: 100%;
                     height: 100%;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     padding: 20px;
                     position: relative;
                     overflow: hidden;
-                }
-
-                .login-background::before {
-                    content: '';
-                    position: absolute;
-                    width: 200%;
-                    height: 200%;
-                    background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-                    background-size: 50px 50px;
-                    animation: backgroundMove 20s linear infinite;
-                }
-
-                @keyframes backgroundMove {
-                    0% { transform: translate(0, 0); }
-                    100% { transform: translate(50px, 50px); }
                 }
 
                 .login-card-wrapper {
