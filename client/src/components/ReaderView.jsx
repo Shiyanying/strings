@@ -13,10 +13,31 @@ const ReaderView = ({ book, onClose, highlightWord = null, vocabVersion = 0, the
     const [jumpHighlight, setJumpHighlight] = useState(null); // 跳转高亮的单词
     const [isEditingContent, setIsEditingContent] = useState(false); // 是否在编辑内容
     const [editedContent, setEditedContent] = useState(''); // 编辑中的内容
+    const [isTouchDevice, setIsTouchDevice] = useState(false); // 是否为触摸设备（包括平板）
     const contentRef = useRef(null);
     const isDraggingRef = useRef(false);
     const longPressTimerRef = useRef(null);
     const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
+    
+    // 检测是否为触摸设备
+    useEffect(() => {
+        const checkTouchDevice = () => {
+            const hasTouch = 'ontouchstart' in window || 
+                            navigator.maxTouchPoints > 0 || 
+                            navigator.msMaxTouchPoints > 0;
+            setIsTouchDevice(hasTouch);
+        };
+        checkTouchDevice();
+        
+        // 监听第一次触摸事件来确认是触摸设备
+        const handleFirstTouch = () => {
+            setIsTouchDevice(true);
+            window.removeEventListener('touchstart', handleFirstTouch);
+        };
+        window.addEventListener('touchstart', handleFirstTouch, { passive: true });
+        
+        return () => window.removeEventListener('touchstart', handleFirstTouch);
+    }, []);
 
     useEffect(() => {
         fetch(`/api/books/${book.id}/content`)
@@ -465,7 +486,7 @@ const ReaderView = ({ book, onClose, highlightWord = null, vocabVersion = 0, the
     };
 
     return (
-        <div className="reader-container">
+        <div className={`reader-container ${isTouchDevice ? 'touch-device' : ''}`}>
             <div className="reader-header">
                 <button className="back-btn btn" onClick={onClose}>
                     ← 返回书架
@@ -658,6 +679,10 @@ const ReaderView = ({ book, onClose, highlightWord = null, vocabVersion = 0, the
           font-weight: 600;
           color: var(--ink-color);
           flex: 1;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .back-btn {
@@ -1204,7 +1229,8 @@ const ReaderView = ({ book, onClose, highlightWord = null, vocabVersion = 0, the
           }
 
           .reader-title {
-            font-size: 16px;
+            font-size: 14px;
+            max-width: 120px;
           }
 
           .back-btn {
@@ -1281,7 +1307,7 @@ const ReaderView = ({ book, onClose, highlightWord = null, vocabVersion = 0, the
             top: auto;
             bottom: -6px;
             border-top-color: transparent;
-            border-bottom-color: var(--ink-color);
+            border-bottom-color: var(--tooltip-bg);
             transform: translateX(-50%) rotate(180deg);
           }
 
@@ -1361,6 +1387,32 @@ const ReaderView = ({ book, onClose, highlightWord = null, vocabVersion = 0, the
               cursor: default;
             }
           }
+        }
+
+        /* 触摸设备样式（包括大屏平板） */
+        .touch-device .text-content {
+          -webkit-user-select: text;
+          -moz-user-select: text;
+          -ms-user-select: text;
+          user-select: text;
+          -webkit-touch-callout: default;
+        }
+
+        .touch-device .vocab-highlight {
+          -webkit-tap-highlight-color: var(--vocab-highlight-border);
+          touch-action: manipulation;
+          cursor: pointer;
+          pointer-events: auto;
+        }
+
+        .touch-device .vocab-highlight:active {
+          background: var(--vocab-highlight-border) !important;
+        }
+
+        /* 触摸设备上隐藏悬停的翻译提示，改用点击 */
+        .touch-device .vocab-highlight::after,
+        .touch-device .vocab-highlight::before {
+          display: none !important;
         }
       `}</style>
         </div>
