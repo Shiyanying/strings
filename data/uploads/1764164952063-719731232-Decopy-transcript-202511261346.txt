@@ -1,0 +1,64 @@
+Marks and Spencers says it expects disruption from a major cyber attack to continue through to July. The retailers had to put a stop to online orders and believes that the impact of the hack will cost it around 300 million pounds. 
+
+Meanwhile, the National Crime Agency says it's focusing on a notorious cluster of criminals, some who are in their teens, as part of its investigation into recent cyber attacks on a number of British retailers. Well, 
+
+our cyber correspondent Joe Tidy reports. The retailer says there's currently limited availability of some products in its stores. Empty shelves. Marks and Spencer has stopped taking online orders. Online orders suspended. 
+
+Well, it comes as the co-op has been forced to shut off part of it. Millions of people's data stolen in the last 3 weeks. Co-op, M&S, Harrods, and now some US retailers have all been attacked by anonymous hackers. The National Crime 
+
+Agency cyber unit says finding them is its top priority. And now for the first time, it's confirming that inquiries are focused on a notorious collective of young English-speaking hackers. We are looking at the group that is publicly 
+
+known as Scattered Spider, but we've got a range of different hypotheses, uh, you know, and we'll follow the evidence to get to the offenders. Scattered Spider is the name given to a collective of hackers responsible for high-profile 
+
+attacks, including on US casinos and Transport for London. Since news emerged of this latest string of hacks on retailers, the cyber security world has pointed at the group as potential culprits. We know that they're 
+
+largely English-speaking. Doesn't necessarily mean that they're in England, um, but English-speaking language. Uh we know that they communicate online amongst themselves in a range of different platforms and 
+
+channels which is um I guess key to their ability to then be able to operate as a collective. Spanish police arrested an alleged member of the scattered spider collective in Madrid last summer. 23-year-old Tyler Buchanan from Dundee 
+
+was extradited to the US last month. In July last year, a 17-year-old from Warsaw was also arrested. Four other men in their early 20s have also been charged, accused of being part of Scattered Spider, some when they were 
+
+teenagers. Police say they're exploring all areas of the cyber crime ecosystem and are working with the FBI and Europole. But the agency also highlights that earlier this year it warned about the growth of a wider sinister online 
+
+cyber crime culture dominated by teenage boys. One former teen hacker who now uses his skills working with the good guys in cyber security agreed to talk to me anonymously. I got arrested about three 
+
+or four times. First time I was about 16 or 17. That was quite scary. What do you think about the idea that there could be teenagers or very young hackers in the UK carrying out these attacks on on retailers? Would that surprise you? No, 
+
+of course it wouldn't surprise me. You kind of can be anonymous nowadays and uh they do feel a bit untouchable. It is really people's lives. You're messing with companies. You're messing with and you know for what ends really. Earlier 
+
+this month, the hackers responsible for the ongoing extortion of co-op contacted me. In text conversations, they refused to say who or where they are, only that they're using the cyber crime service Dragon Force. They also claimed to be 
+
+behind the M&S and Harrods attacks, too. They left me with this image, clearly enjoying the chaos they're inflicting. Joe Tidy, BBC News. And as you can see, uh, Joe Tidy joins us live now. And Joe, I just love this 
+
+idea that they are contacting you directly. They're having a lot of fun with this, aren't they? They are. And that's the thing about this group, Scattered Spider, which is where most people are pointing in the direction of 
+
+them. And that now we've got confirmation from the NCA. They seem to be focusing in that area. They don't just go after money like all cyber criminal gangs. They go after infamy and fame and chaos. And we know this from 
+
+previous attacks as well. and the kind of the way they work and and the reason why there's so much evidence or or um potential um evidence going in that direction is because of something called TTPs which is techniques, tactics and 
+
+procedures. The way they they are working to get into these organizations seems to be following a very specific path that these teenagers and young people probably from the UK and the US have followed in the past. And when it 
+
+comes to the companies that they're targeting, you talked about co-op of Marks and Spencers of course uh as as well. M&S are not saying that it's cyberware, but from your experience, what do you think is happening to them? 
+
+Because it's taking an awful long time to resolve what's happening with this huge company. Yeah, it all started at Easter time, so we're looking at nearly a month now. And M&S isn't saying that it's ransomware. They're still referring 
+
+to this as a cyber incident. I'm not sure why they're doing that, but everyone in the security industry knows it's ransomware. And we know from ransomware, of course, that the hackers, it's like a three-step process. You 
+
+break in, you steal as much data as you can, then you scramble the files, and then you go to the company, you say, "Give me a certain number of Bitcoin uh and we'll give you the key back to unscramble your data, and we won't 
+
+publish that data uh on the internet." So, that seems to be the situation that M&S is in. why we're seeing such a long tale of recovery for them compared to co-op which didn't have that final step. Um and then we don't know what's going 
+
+on with Harrods. They haven't said anything. But from from experience of pe speaking to companies that have been hit with ransomware, if you don't pay, you have to rebuild your entire network from scratch and I've been in companies 
+
+months and months on after they've been hit. And you've got stacks of computers piled up completely unusable and it's like they've got stickers on them, blue for dead and red for dead and blue for like we need to wipe it and then we need 
+
+to get it back online. So that's the situation M&S is in. Unless of course they've paid the criminals, in which case there will be a a quicker recovery, but that can still take a long time, months, months in some cases. And and 
+
+ransomware, not cyberware. That's my mistake. It shows how much I know about this. Uh for customers of those companies that have been targeted, change your password. What's the advice? Yeah, I'm afraid it's it's it's the 
+
+usual. change your advice and and be wary because that data that's that's now in the hands of criminals from the co-op and from M&S, date of birth, names, addresses, phone numbers, email addresses, that can be used against you 
+
+in secondary attacks, especially in the in the example of M&S, which has got payment uh and purchasing history. So, you can just imagine if you think like a cyber criminal, there could be secondary attacks that people need to be very 
+
+aware very aware and and and precautious of. Think like a cyber criminal. That's that's advice that uh Yes, thank you very much Joe Tidy as always. Really great stuff there. 
+

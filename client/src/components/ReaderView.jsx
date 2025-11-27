@@ -1311,13 +1311,13 @@ const ReaderView = ({ book, onClose, highlightWord = null, vocabVersion = 0, the
             transform: translateX(-50%) rotate(180deg);
           }
 
-          /* 移动端选择 tooltip 优化 */
+          /* 移动端选择 tooltip 优化 - 居中显示 */
           .selection-tooltip {
             position: fixed !important;
-            top: auto !important;
-            bottom: 20px !important;
+            top: 50% !important;
+            bottom: auto !important;
             left: 50% !important;
-            transform: translateX(-50%);
+            transform: translate(-50%, -50%);
             width: 90%;
             max-width: 340px;
             padding: 16px;

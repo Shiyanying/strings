@@ -116,9 +116,10 @@ const ParticleBackground = ({ imageUrl }) => {
     // 创建默认粒子（无图片时）
     const createDefaultParticles = useCallback((canvas) => {
         const particles = [];
-        const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe'];
+        // 五彩色板
+        const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#fa709a', '#fee140'];
         
-        for (let i = 0; i < 150; i++) {
+        for (let i = 0; i < 300; i++) {
             const x = Math.random() * canvas.width;
             const y = Math.random() * canvas.height;
             const color = colors[Math.floor(Math.random() * colors.length)];
@@ -136,8 +137,8 @@ const ParticleBackground = ({ imageUrl }) => {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // 绘制半透明背景
-        ctx.fillStyle = 'rgba(102, 126, 234, 0.03)';
+        // 绘制半透明背景（蓝色调）
+        ctx.fillStyle = 'rgba(2, 132, 199, 0.03)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         particlesRef.current.forEach(particle => {
@@ -242,7 +243,7 @@ const ParticleBackground = ({ imageUrl }) => {
                 left: 0,
                 width: '100%',
                 height: '100%',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: 'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)',
             }}
         />
     );
